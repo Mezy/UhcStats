@@ -409,4 +409,6 @@ public class StatsManager{
         return leaderBoards;
     }
 
+    public YamlConfiguration getConfig(){ return cfg; }
+
 }

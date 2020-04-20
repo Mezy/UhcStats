@@ -46,3 +46,10 @@ leaderboards-sample:
       x: 0
       y: 50
       z: 0
+
+# The equivalent of your stats in points
+points:
+  # how many points does a kill gives ?
+  kill-points: 1
+  # how many points does a win gives ?
+  win-points: 10
