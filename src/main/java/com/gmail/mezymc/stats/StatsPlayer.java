@@ -1,5 +1,7 @@
 package com.gmail.mezymc.stats;
 
+import org.bukkit.configuration.file.YamlConfiguration;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,6 +31,20 @@ public class StatsPlayer{
 
     void setGameModeStats(GameMode gameMode, Map<StatType, Integer> stats){
         gameModeStats.put(gameMode.getKey(), stats);
+    }
+
+    public int getGameModePoints(GameMode gameMode){
+        YamlConfiguration cfg = StatsManager.getStatsManager().getConfig();
+        int kills = getGameModeStats(GameMode.DEFAULT).getOrDefault(StatType.KILL, -1);
+        int wins = getGameModeStats(GameMode.DEFAULT).getOrDefault(StatType.WIN, -1);
+        int points = 0;
+        if (kills > 0){
+            points += kills * cfg.getInt("points.kill-points");
+        }
+        if (wins > 0){
+            points += wins * cfg.getInt("points.win-points");
+        }
+        return points;
     }
 
     public Map<StatType, Integer> getGameModeStats(GameMode gameMode){
