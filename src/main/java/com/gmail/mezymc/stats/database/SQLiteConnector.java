@@ -161,13 +161,13 @@ public class SQLiteConnector implements DatabaseConnector {
     private Connection getSqlConnection() throws SQLException {
         Validate.isTrue(!Bukkit.isPrimaryThread(), "You may only open an connection to the database on a asynchronous thread!");
 
-        // Open connection to local SQLite database "stats.db"
-        File dataFile = new File(getPlugin().getDataFolder(), "stats.db");
+        // Open connection to local SQLite database "database.db"
+        File dataFile = new File(getPlugin().getDataFolder(), "database.db");
         if (!dataFile.exists()) {
             try {
                 dataFile.createNewFile();
             } catch (IOException e) {
-                Bukkit.getLogger().log(Level.SEVERE, "File write error: stats.db");
+                Bukkit.getLogger().log(Level.SEVERE, "File write error: database.db");
             }
         }
         try {

@@ -50,10 +50,14 @@ public class UhcStatListener implements Listener{
 
     @EventHandler
     public void onGameStateChangedEvent(UhcGameStateChangedEvent e){
-        // When the game is waiting for players (world have finished being generated), load the leaderboards
-        // This is so that the leaderboards can go in the correct world
-        if(e.getNewGameState() == GameState.WAITING) {
-            Bukkit.getScheduler().runTaskLater(UhcStats.getPlugin(), () -> StatsManager.getStatsManager().loadLeaderBoards(), 10);
+        // If this is a UHC server (and not a lobby server with this plugin installed on it),
+        // load the leader-boards only after the the UHC game world(s) are pre-generated
+        if(StatsManager.getStatsManager().getIsUhcServer()) {
+            // When the game is waiting for players (world(s) have finished being pre-generated), load the leaderboards
+            // This is so that the leaderboards can go in the correct world if the default lobby is used
+            if (e.getNewGameState() == GameState.WAITING) {
+                Bukkit.getScheduler().runTaskLater(UhcStats.getPlugin(), () -> StatsManager.getStatsManager().loadLeaderBoards(), 10);
+            }
         }
     }
 

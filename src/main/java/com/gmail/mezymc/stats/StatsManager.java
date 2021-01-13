@@ -40,6 +40,7 @@ public class StatsManager{
     private boolean isUhcServer;
     private boolean onlineMode;
     private GameMode serverGameMode;
+    private int leaderBoardsUpdateInterval;
 
     public StatsManager(){
         statsManager = this;
@@ -177,15 +178,15 @@ public class StatsManager{
             return false;
         }
 
-        boolean useMySql = true;
+        boolean useMySql = cfg.getBoolean ("use-mysql-database");
 
-        // SQL Details not yet set, use SQLite database instead
-        if (cfg.getString("sql.password", "password123").equals("password123")){
-            Bukkit.getLogger().info("[UhcStats] MySQL details not set, using SQLite database instead");
-            useMySql = false;
+        // If need to use MySQL but database connection details are not yet set, disable plugin
+        if (useMySql && cfg.getString("sql.password", "password123").equals("password123")){
+            Bukkit.getLogger().severe("[UhcStats] MySQL database details not set! Disabling plugin since stats cannot be saved!");
+            return false;
         }
 
-        // Connect to MySQL database if details are set
+        // Connect to MySQL database if configured to do so and details are set
         if(useMySql) {
             databaseConnector = new MySqlConnector(
                     cfg.getString("sql.ip", "localhost"),
@@ -195,7 +196,7 @@ public class StatsManager{
                     cfg.getInt("sql.port", 3306)
             );
         }
-        // Connect to local SQLite database otherwise
+        // Connect to local SQLite database if configured to do so
         else {
             databaseConnector = new SQLiteConnector();
         }
@@ -245,6 +246,13 @@ public class StatsManager{
 
             Bukkit.getLogger().info("[UhcStats] Loaded " + gameModes.size() + " GameModes!");
 
+            // If this is not a UHC server (but a lobby server with this plugin installed on it),
+            // load the leader-boards right away since we do not need to wait for the UHC game world(s) to pre-generate
+            if(!isUhcServer) {
+                Bukkit.getScheduler().runTaskLater(UhcStats.getPlugin(), () -> loadLeaderBoards(), 10);
+            }
+            // Otherwise, they will be loaded when the game is ready
+
         }
 
         // Load server GameMode
@@ -257,6 +265,8 @@ public class StatsManager{
 
             Bukkit.getLogger().info("[UhcStats] Server GameMode is: " + serverGameMode.getKey());
         }
+
+        leaderBoardsUpdateInterval = cfg.getInt("leaderboards-update-interval", 60);
 
         return true;
     }
@@ -416,5 +426,9 @@ public class StatsManager{
     public Set<LeaderBoard> getLeaderBoards(){
         return leaderBoards;
     }
+
+    public int getLeaderBoardsUpdateInterval() { return leaderBoardsUpdateInterval; }
+
+    public boolean getIsUhcServer() { return isUhcServer; }
 
 }

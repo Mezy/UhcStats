@@ -39,34 +39,48 @@ public class LeaderBoard{
 
     public void instantiate(ConfigurationSection cfg){
 
-        // Search for correct world to place the leaderboard into
-        World mainUHCWorld = Bukkit.getWorld("world");
+        String title = cfg.getString("title");
+        format = cfg.getString("lines");
+
         boolean didFindWorld = false;
-        for(World world : Bukkit.getWorlds()) {
-            // The world must be in the overworld but not the default "world"
-            if(!world.getName().equals("world") && world.getEnvironment() == World.Environment.NORMAL) {
-                // The correct one is the one with the glass box (the default lobby)
-                if(world.getBlockAt(0, 199, 0).getType() == Material.GLASS) {
-                    mainUHCWorld = world;
-                    didFindWorld = true;
+        World worldForLeaderboard = Bukkit.getWorlds().get(0);
+        String configWorldName = cfg.getString("location.world");
+
+        // If this leader-board specifies which world it should be created in, create it in that world
+        if(configWorldName != null) {
+            worldForLeaderboard = Bukkit.getWorld(configWorldName);
+            if(worldForLeaderboard == null) {
+                Bukkit.getLogger().warning("[UhcStats] World \"" + configWorldName + "\" for leaderboard titled \"" + title + "\" is invalid");
+                Bukkit.getLogger().warning("[UhcStats] Will attempt to place it in default lobby world...");
+            } else {
+                didFindWorld = true;
+            }
+        }
+        // Otherwise, search for the world containing the default lobby to place the leader-board into
+        if(!didFindWorld) {
+            for (World world : Bukkit.getWorlds()) {
+                // The world must be in the overworld
+                if (world.getEnvironment() == World.Environment.NORMAL) {
+                    // The correct one is the one with the glass box (the default lobby)
+                    if (world.getBlockAt(0, 199, 0).getType() == Material.GLASS) {
+                        worldForLeaderboard = world;
+                        didFindWorld = true;
+                    }
                 }
             }
         }
-        // If the correct world could not be found, issue a warning
+        // If the correct world could not be found for leader-board, issue a warning
         if(!didFindWorld) {
-            Bukkit.getLogger().warning("[UhcStats] Could not find world for leaderboard");
+            Bukkit.getLogger().warning("[UhcStats] Could not find the default lobby world for leaderboard titled \"" + title + "\"");
+            Bukkit.getLogger().warning("[UhcStats] Using the first available one instead");
         }
 
-        // Use the correct world in the location specification
         location = new Location(
-                mainUHCWorld,
+                worldForLeaderboard,
                 cfg.getDouble("location.x"),
                 cfg.getDouble("location.y"),
                 cfg.getDouble("location.z")
         );
-
-        String title = cfg.getString("title");
-        format = cfg.getString("lines");
 
         title = ChatColor.translateAlternateColorCodes('&', title);
         format = ChatColor.translateAlternateColorCodes('&', format);
@@ -76,6 +90,7 @@ public class LeaderBoard{
                 title
         );
         armorStand2 = null;
+
     }
 
     public String getFormat(){
@@ -105,7 +120,9 @@ public class LeaderBoard{
     }
 
     public void unload(){
-        armorStand1.remove();
+        if (armorStand1 != null) {
+            armorStand1.remove();
+        }
         if (armorStand2 != null) {
             armorStand2.remove();
         }
