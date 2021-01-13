@@ -1,9 +1,6 @@
 package com.gmail.mezymc.stats;
 
-import com.gmail.mezymc.stats.database.DatabaseColumn;
-import com.gmail.mezymc.stats.database.DatabaseConnector;
-import com.gmail.mezymc.stats.database.MySqlConnector;
-import com.gmail.mezymc.stats.database.Position;
+import com.gmail.mezymc.stats.database.*;
 import com.gmail.mezymc.stats.listeners.ConnectionListener;
 import com.gmail.mezymc.stats.listeners.GuiListener;
 import com.gmail.mezymc.stats.listeners.StatCommandListener;
@@ -180,19 +177,28 @@ public class StatsManager{
             return false;
         }
 
-        // SQL Details not yet set, disable plugin
+        boolean useMySql = true;
+
+        // SQL Details not yet set, use SQLite database instead
         if (cfg.getString("sql.password", "password123").equals("password123")){
-            Bukkit.getLogger().warning("[UhcStats] SQL details not set! Disabling plugin!");
-            return false;
+            Bukkit.getLogger().info("[UhcStats] MySQL details not set, using SQLite database instead");
+            useMySql = false;
         }
 
-        databaseConnector = new MySqlConnector(
-                cfg.getString("sql.ip", "localhost"),
-                cfg.getString("sql.username", "localhost"),
-                cfg.getString("sql.password", "password123"),
-                cfg.getString("sql.database", "minecraft"),
-                cfg.getInt("sql.port", 3306)
-        );
+        // Connect to MySQL database if details are set
+        if(useMySql) {
+            databaseConnector = new MySqlConnector(
+                    cfg.getString("sql.ip", "localhost"),
+                    cfg.getString("sql.username", "localhost"),
+                    cfg.getString("sql.password", "password123"),
+                    cfg.getString("sql.database", "minecraft"),
+                    cfg.getInt("sql.port", 3306)
+            );
+        }
+        // Connect to local SQLite database otherwise
+        else {
+            databaseConnector = new SQLiteConnector();
+        }
 
         onlineMode = cfg.getBoolean("online-mode", true);
 
@@ -239,9 +245,7 @@ public class StatsManager{
 
             Bukkit.getLogger().info("[UhcStats] Loaded " + gameModes.size() + " GameModes!");
 
-            Bukkit.getScheduler().runTaskLater(UhcStats.getPlugin(), () -> loadLeaderBoards(cfg), 10);
         }
-
 
         // Load server GameMode
         if (isUhcServer){
@@ -380,7 +384,7 @@ public class StatsManager{
         databaseConnector.pushStats(statsPlayer.getId(), gameMode, statsPlayer.getGameModeStats(gameMode));
     }
 
-    private void loadLeaderBoards(YamlConfiguration cfg){
+    public void loadLeaderBoards(){
         ConfigurationSection cfgSection = cfg.getConfigurationSection("leaderboards");
         leaderBoards = new HashSet<>();
 

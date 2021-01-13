@@ -1,7 +1,9 @@
 package com.gmail.mezymc.stats.listeners;
 
 import com.gmail.mezymc.stats.*;
+import com.gmail.val59000mc.events.UhcGameStateChangedEvent;
 import com.gmail.val59000mc.events.UhcWinEvent;
+import com.gmail.val59000mc.game.GameState;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -44,6 +46,15 @@ public class UhcStatListener implements Listener{
 
         // Push all stats
         Bukkit.getScheduler().runTaskAsynchronously(UhcStats.getPlugin(), () -> statsManager.pushAllStats());
+    }
+
+    @EventHandler
+    public void onGameStateChangedEvent(UhcGameStateChangedEvent e){
+        // When the game is waiting for players (world have finished being generated), load the leaderboards
+        // This is so that the leaderboards can go in the correct world
+        if(e.getNewGameState() == GameState.WAITING) {
+            Bukkit.getScheduler().runTaskLater(UhcStats.getPlugin(), () -> StatsManager.getStatsManager().loadLeaderBoards(), 10);
+        }
     }
 
 }

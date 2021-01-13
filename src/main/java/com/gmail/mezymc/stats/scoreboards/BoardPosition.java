@@ -72,7 +72,10 @@ public class BoardPosition {
     }
 
     public void remove(){
-        armorStand.remove();
+        // Only remove armor stand if it was created in the first place
+        if(armorStand != null) {
+            armorStand.remove();
+        }
     }
 
     public Location getLocation(){
@@ -98,11 +101,17 @@ public class BoardPosition {
     private void spawnArmorStand(){
         Location location = getLocation();
 
-        for (Entity entity : location.getWorld().getNearbyEntities(location,1,1,1)){
-            if (entity.getType() == EntityType.ARMOR_STAND && entity.getLocation().equals(location)){
-                armorStand = (ArmorStand) entity;
+        // getNearbyEntities() must be used synchronously
+        LeaderboardUpdateThread.runSync(new Runnable() {
+            @Override
+            public void run() {
+                for (Entity entity : location.getWorld().getNearbyEntities(location, 1, 1, 1)){
+                    if (entity.getType() == EntityType.ARMOR_STAND && entity.getLocation().equals(location)){
+                        armorStand = (ArmorStand) entity;
+                    }
+                }
             }
-        }
+        });
 
         if (armorStand == null){
             LeaderboardUpdateThread.runSync(new Runnable() {

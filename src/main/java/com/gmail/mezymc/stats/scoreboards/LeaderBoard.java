@@ -3,9 +3,7 @@ package com.gmail.mezymc.stats.scoreboards;
 import com.gmail.mezymc.stats.GameMode;
 import com.gmail.mezymc.stats.StatType;
 import com.gmail.mezymc.stats.StatsManager;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -41,8 +39,27 @@ public class LeaderBoard{
 
     public void instantiate(ConfigurationSection cfg){
 
+        // Search for correct world to place the leaderboard into
+        World mainUHCWorld = Bukkit.getWorld("world");
+        boolean didFindWorld = false;
+        for(World world : Bukkit.getWorlds()) {
+            // The world must be in the overworld but not the default "world"
+            if(!world.getName().equals("world") && world.getEnvironment() == World.Environment.NORMAL) {
+                // The correct one is the one with the glass box (the default lobby)
+                if(world.getBlockAt(0, 199, 0).getType() == Material.GLASS) {
+                    mainUHCWorld = world;
+                    didFindWorld = true;
+                }
+            }
+        }
+        // If the correct world could not be found, issue a warning
+        if(!didFindWorld) {
+            Bukkit.getLogger().warning("[UhcStats] Could not find world for leaderboard");
+        }
+
+        // Use the correct world in the location specification
         location = new Location(
-                Bukkit.getWorld(cfg.getString("location.world")),
+                mainUHCWorld,
                 cfg.getDouble("location.x"),
                 cfg.getDouble("location.y"),
                 cfg.getDouble("location.z")
