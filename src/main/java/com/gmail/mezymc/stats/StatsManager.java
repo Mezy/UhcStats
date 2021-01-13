@@ -1,9 +1,6 @@
 package com.gmail.mezymc.stats;
 
-import com.gmail.mezymc.stats.database.DatabaseColumn;
-import com.gmail.mezymc.stats.database.DatabaseConnector;
-import com.gmail.mezymc.stats.database.MySqlConnector;
-import com.gmail.mezymc.stats.database.Position;
+import com.gmail.mezymc.stats.database.*;
 import com.gmail.mezymc.stats.listeners.ConnectionListener;
 import com.gmail.mezymc.stats.listeners.GuiListener;
 import com.gmail.mezymc.stats.listeners.StatCommandListener;
@@ -43,6 +40,7 @@ public class StatsManager{
     private boolean isUhcServer;
     private boolean onlineMode;
     private GameMode serverGameMode;
+    private int leaderBoardsUpdateInterval;
 
     public StatsManager(){
         statsManager = this;
@@ -180,19 +178,28 @@ public class StatsManager{
             return false;
         }
 
-        // SQL Details not yet set, disable plugin
-        if (cfg.getString("sql.password", "password123").equals("password123")){
-            Bukkit.getLogger().warning("[UhcStats] SQL details not set! Disabling plugin!");
+        boolean useMySql = cfg.getBoolean ("use-mysql-database");
+
+        // If need to use MySQL but database connection details are not yet set, disable plugin
+        if (useMySql && cfg.getString("sql.password", "password123").equals("password123")){
+            Bukkit.getLogger().severe("[UhcStats] MySQL database details not set! Disabling plugin since stats cannot be saved!");
             return false;
         }
 
-        databaseConnector = new MySqlConnector(
-                cfg.getString("sql.ip", "localhost"),
-                cfg.getString("sql.username", "localhost"),
-                cfg.getString("sql.password", "password123"),
-                cfg.getString("sql.database", "minecraft"),
-                cfg.getInt("sql.port", 3306)
-        );
+        // Connect to MySQL database if configured to do so and details are set
+        if(useMySql) {
+            databaseConnector = new MySqlConnector(
+                    cfg.getString("sql.ip", "localhost"),
+                    cfg.getString("sql.username", "localhost"),
+                    cfg.getString("sql.password", "password123"),
+                    cfg.getString("sql.database", "minecraft"),
+                    cfg.getInt("sql.port", 3306)
+            );
+        }
+        // Connect to local SQLite database if configured to do so
+        else {
+            databaseConnector = new SQLiteConnector();
+        }
 
         onlineMode = cfg.getBoolean("online-mode", true);
 
@@ -239,9 +246,14 @@ public class StatsManager{
 
             Bukkit.getLogger().info("[UhcStats] Loaded " + gameModes.size() + " GameModes!");
 
-            Bukkit.getScheduler().runTaskLater(UhcStats.getPlugin(), () -> loadLeaderBoards(cfg), 10);
-        }
+            // If this is not a UHC server (but a lobby server with this plugin installed on it),
+            // load the leader-boards right away since we do not need to wait for the UHC game world(s) to pre-generate
+            if(!isUhcServer) {
+                Bukkit.getScheduler().runTaskLater(UhcStats.getPlugin(), () -> loadLeaderBoards(), 10);
+            }
+            // Otherwise, they will be loaded when the game is ready
 
+        }
 
         // Load server GameMode
         if (isUhcServer){
@@ -253,6 +265,8 @@ public class StatsManager{
 
             Bukkit.getLogger().info("[UhcStats] Server GameMode is: " + serverGameMode.getKey());
         }
+
+        leaderBoardsUpdateInterval = cfg.getInt("leaderboards-update-interval", 60);
 
         return true;
     }
@@ -380,7 +394,7 @@ public class StatsManager{
         databaseConnector.pushStats(statsPlayer.getId(), gameMode, statsPlayer.getGameModeStats(gameMode));
     }
 
-    private void loadLeaderBoards(YamlConfiguration cfg){
+    public void loadLeaderBoards(){
         ConfigurationSection cfgSection = cfg.getConfigurationSection("leaderboards");
         leaderBoards = new HashSet<>();
 
@@ -412,5 +426,9 @@ public class StatsManager{
     public Set<LeaderBoard> getLeaderBoards(){
         return leaderBoards;
     }
+
+    public int getLeaderBoardsUpdateInterval() { return leaderBoardsUpdateInterval; }
+
+    public boolean getIsUhcServer() { return isUhcServer; }
 
 }

@@ -3,9 +3,7 @@ package com.gmail.mezymc.stats.scoreboards;
 import com.gmail.mezymc.stats.GameMode;
 import com.gmail.mezymc.stats.StatType;
 import com.gmail.mezymc.stats.StatsManager;
-import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
-import org.bukkit.Location;
+import org.bukkit.*;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -41,15 +39,48 @@ public class LeaderBoard{
 
     public void instantiate(ConfigurationSection cfg){
 
+        String title = cfg.getString("title");
+        format = cfg.getString("lines");
+
+        boolean didFindWorld = false;
+        World worldForLeaderboard = Bukkit.getWorlds().get(0);
+        String configWorldName = cfg.getString("location.world");
+
+        // If this leader-board specifies which world it should be created in, create it in that world
+        if(configWorldName != null) {
+            worldForLeaderboard = Bukkit.getWorld(configWorldName);
+            if(worldForLeaderboard == null) {
+                Bukkit.getLogger().warning("[UhcStats] World \"" + configWorldName + "\" for leaderboard titled \"" + title + "\" is invalid");
+                Bukkit.getLogger().warning("[UhcStats] Will attempt to place it in default lobby world...");
+            } else {
+                didFindWorld = true;
+            }
+        }
+        // Otherwise, search for the world containing the default lobby to place the leader-board into
+        if(!didFindWorld) {
+            for (World world : Bukkit.getWorlds()) {
+                // The world must be in the overworld
+                if (world.getEnvironment() == World.Environment.NORMAL) {
+                    // The correct one is the one with the glass box (the default lobby)
+                    if (world.getBlockAt(0, 199, 0).getType() == Material.GLASS) {
+                        worldForLeaderboard = world;
+                        didFindWorld = true;
+                    }
+                }
+            }
+        }
+        // If the correct world could not be found for leader-board, issue a warning
+        if(!didFindWorld) {
+            Bukkit.getLogger().warning("[UhcStats] Could not find the default lobby world for leaderboard titled \"" + title + "\"");
+            Bukkit.getLogger().warning("[UhcStats] Using the first available one instead");
+        }
+
         location = new Location(
-                Bukkit.getWorld(cfg.getString("location.world")),
+                worldForLeaderboard,
                 cfg.getDouble("location.x"),
                 cfg.getDouble("location.y"),
                 cfg.getDouble("location.z")
         );
-
-        String title = cfg.getString("title");
-        format = cfg.getString("lines");
 
         title = ChatColor.translateAlternateColorCodes('&', title);
         format = ChatColor.translateAlternateColorCodes('&', format);
@@ -59,6 +90,7 @@ public class LeaderBoard{
                 title
         );
         armorStand2 = null;
+
     }
 
     public String getFormat(){
@@ -88,7 +120,9 @@ public class LeaderBoard{
     }
 
     public void unload(){
-        armorStand1.remove();
+        if (armorStand1 != null) {
+            armorStand1.remove();
+        }
         if (armorStand2 != null) {
             armorStand2.remove();
         }

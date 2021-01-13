@@ -22,8 +22,11 @@ public class LeaderboardUpdateThread implements Runnable{
             }
         }
 
-        // re-run
-        Bukkit.getScheduler().runTaskLaterAsynchronously(UhcStats.getPlugin(), this, 20*60);
+        // Re-run if need be
+        int leaderboardsUpdateInterval = statsManager.getLeaderBoardsUpdateInterval();
+        if(leaderboardsUpdateInterval > 0) {
+            Bukkit.getScheduler().runTaskLaterAsynchronously(UhcStats.getPlugin(), this, 20 * leaderboardsUpdateInterval);
+        }
     }
 
     public static void runSync(Runnable runnable){

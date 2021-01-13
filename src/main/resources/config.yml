@@ -1,3 +1,25 @@
+# Recommended config options
+
+# For a hub / lobby server in a bungeecord server network:
+# use-mysql-database: true
+# `gamemodes` section must be populated with corresponding gamemode(s) from your actual UHC game server(s)
+
+# For a UHC server in a bungeecord server network:
+# use-mysql-database: true
+# Set `server-gamemode` to type of game being hosted on this UHC server
+
+# For a standalone UHC server:
+# use-mysql-database: false
+# Either remove `gamemodes` section or set `server-gamemode` to `uhc`
+# Set each leaderboard's `gamemode` to `uhc`
+# Remove each leaderboard's `world` section if not using a custom lobby
+
+
+# Database type to use.
+# true: use external MySQL database (primarily for server networks)
+# false:  use local SQLite database file "plugins/UhcStats/database.db" (primarily for standalone servers)
+use-mysql-database: true
+
 # MySql details, in this database the stats will be stored.
 sql:
   ip: 'localhost'
@@ -15,7 +37,8 @@ stats-command: '/stats'
 
 gui-title: '&6&lUHC Stats'
 
-# If you have multiple UHC GameModes on your server you can configure them here. If you only have one you can delete this section.
+# If you are using a server network (e.g. bungeecord) with multiple UHC servers, you can configure them here.
+# If you only have one standalone UHC server you should delete this section.
 gamemodes:
   # The current server GameMode. If this is a UHC server under what GameMode should the statistics be saved?
   server-gamemode: 'cutclean'
@@ -30,19 +53,31 @@ gamemodes:
     name: '&aUhc Run'
     display-item: 'DIAMOND_PICKAXE'
 
+# How often to update the leader-boards, in seconds
+# Set to 0 to disable
+leaderboards-update-interval: 60
+
+# Set this according to the example configuration section below
+# (You can delete this line and adapt the example section to your needs)
 leaderboards: {}
 
 leaderboards-sample:
   board-1:
     # Choose from: KILL, DEATH and WIN
     stat-type: KILL
+    # If gamemodes section above is not used, set the gamemode below to "uhc".
     gamemode: cutclean
+    # Title for this leader-board (can use formatting codes).
     title: '&aCutClean top 10 kills'
-    # Layout of the leader-board lines.
+    # Layout of the leader-board lines (can use formatting codes).
     lines: '&a%number%. %player%: %count%'
     # Location where the leader-board should spawn.
     location:
+      # Remove the "world: world" line to place this leader-board in the default lobby
+      # Otherwise, set the world this leader-board should be created in
+      # If used on a standalone server with the default lobby, this line should be removed
       world: world
+      # Coordinates in world to create the leader-board at ([0x 202y 0z] is the center of the default glass box lobby)
       x: 0
-      y: 50
+      y: 202
       z: 0

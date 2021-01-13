@@ -35,8 +35,12 @@ public class UhcStats extends JavaPlugin{
 
     @Override
     public void onDisable() {
-        for (LeaderBoard leaderBoard : StatsManager.getStatsManager().getLeaderBoards()){
-            leaderBoard.unload();
+        if(StatsManager.getStatsManager().getLeaderBoards() != null) {
+            for (LeaderBoard leaderBoard : StatsManager.getStatsManager().getLeaderBoards()) {
+                if(leaderBoard != null) {
+                    leaderBoard.unload();
+                }
+            }
         }
     }
 
